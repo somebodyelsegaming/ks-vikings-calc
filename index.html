@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kingshot - Vikings Reinforcement Calculator</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --text: #1b1f24; --muted: #5b6470;
+    --line: #d9dde3; --accent: #2563eb; --accent-soft: #e8efff; --warn: #b45309; --ok: #15803d;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #111418; --card: #1a1f25; --text: #e6e9ed; --muted: #9aa4b0;
+      --line: #2c333c; --accent: #6b9bff; --accent-soft: #1c2a45; --warn: #f0a646; --ok: #4ade80;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  h2 { font-size: 1rem; margin: 0 0 10px; }
+  .sub { color: var(--muted); margin: 0 0 20px; font-size: .9rem; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px; margin-bottom: 16px;
+  }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+  .grid.three { grid-template-columns: 1fr 1fr 1fr; align-items: end; }
+  .total {
+    display: block; padding: 8px; border: 1px solid var(--accent); border-radius: 6px;
+    background: var(--accent-soft); font-weight: 700; text-align: right; font-variant-numeric: tabular-nums;
+  }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  .pair .card { margin-bottom: 16px; }
+  .stack { display: grid; gap: 10px; }
+  @media (max-width: 520px) { .grid, .grid.three, .pair { grid-template-columns: 1fr; } .pair { gap: 0; } }
+  label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: 4px; }
+  select, input {
+    width: 100%; padding: 8px; font: inherit; color: var(--text);
+    background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 6px; border-bottom: 1px solid var(--line); }
+  td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+  tr.key td { font-size: 1.1rem; }
+  .neg { color: var(--warn); }
+  .hero { background: var(--accent-soft); border: 2px solid var(--accent); }
+  .tile {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 8px 10px; margin-bottom: 6px; background: var(--card);
+    border-radius: 6px; border-left: 6px solid var(--c);
+  }
+  .tile span { font-weight: 600; }
+  .tile b { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+  .inf { --c: #2563eb; } .cav { --c: #d97706; } .arch { --c: #16a34a; }
+  .bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin: 10px 0 4px; background: var(--line); }
+  .bar i { background: var(--c); }
+  .status { font-weight: 600; border-width: 2px; }
+  .status.ok { border-color: var(--ok); color: var(--ok); }
+  .status.bad { border-color: var(--warn); color: var(--warn); }
+  .status .small { font-weight: 400; margin: 4px 0 0; }
+  .small { font-size: .85rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Kingshot - Vikings Reinforcement Calculator</h1>
+  <p class="sub">How many troops your marches can carry, and how many you have left over.<br>Built by Somebody Else, the gnome you know.</p>
+
+  <div class="pair">
+    <div class="card">
+      <h2>Marches</h2>
+      <div class="stack">
+        <div>
+          <label for="size">Size of march</label>
+          <input id="size" type="number" min="0" step="1" value="189110">
+        </div>
+        <div>
+          <label for="marches">Number of marches</label>
+          <select id="marches"></select>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Bonuses</h2>
+      <div class="stack">
+        <div>
+          <label for="pet">Pet bonus (Might Bison)</label>
+          <select id="pet"></select>
+        </div>
+        <div>
+          <label for="item">City Deployment Buff (optional)</label>
+          <select id="item"></select>
+        </div>
+        <div>
+          <label for="castle">Castle bonus</label>
+          <select id="castle"></select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Troops</h2>
+    <div class="grid three">
+      <div><label for="inf10">Infantry MAX</label><input id="inf10" type="number" min="0" step="1" value="1169162"></div>
+      <div><label for="inf9">Infantry (not yet promoted)</label><input id="inf9" type="number" min="0" step="1" value="27552"></div>
+      <div><label>Infantry total</label><output id="o-inftotal" class="total"></output></div>
+      <div><label for="cav10">Cavalry MAX</label><input id="cav10" type="number" min="0" step="1" value="1131874"></div>
+      <div><label for="cav9">Cavalry (not yet promoted)</label><input id="cav9" type="number" min="0" step="1" value="26389"></div>
+      <div><label>Cavalry total</label><output id="o-cavtotal" class="total"></output></div>    </div>
+  </div>
+
+  <div class="pair">
+    <div class="card">
+      <h2>What we have to work with</h2>
+      <table>
+        <tr><td>Troops that can be sent out (all marches)</td><td id="o-volume"></td></tr>
+        <tr><td>Troops to try to get rid of</td><td id="o-troops"></td></tr>
+        <tr class="key"><td>Head room</td><td id="o-head"></td></tr>
+      </table>
+      <p class="small">Negative head room means you have more troops than the marches can carry.</p>
+      <p class="small">Each march is filled in this order: all infantry first, then cavalry, then archers if there is room left.</p>
+    </div>
+    <div class="card hero">
+      <h2>Send each march as</h2>
+      <div class="tile inf"><span>Infantry</span><b id="o-inf"></b></div>
+      <div class="tile cav"><span>Cavalry</span><b id="o-cav"></b></div>
+      <div class="tile arch"><span>Archers</span><b id="o-arch"></b></div>
+      <div class="bar" aria-hidden="true"><i id="b-inf" class="inf"></i><i id="b-cav" class="cav"></i><i id="b-arch" class="arch"></i></div>
+      <p class="small">Modified march size: <strong id="o-march2"></strong></p>
+    </div>
+  </div>
+
+  <div id="inf-status" class="card status"></div>
+</main>
+
+<script>
+// Same formulas as the original spreadsheet, cell refs noted.
+function calc(v) {
+  const march = (v.size + v.pet + v.castle) * (1 + v.item / 100); // E6
+  const volume = march * v.marches;                                // B8
+  const troops = v.inf10 + v.inf9 + v.cav10 + v.cav9;              // B16, minus the infirmary term
+  // Fill order per march: infantry, then cavalry, then archers in whatever room is left.
+  // The sheet (E11-E15) let these go past the march size; here each is capped to fit.
+  const inf = Math.min(Math.round((v.inf10 + v.inf9) / v.marches), march);
+  const cav = Math.min(Math.round((v.cav10 + v.cav9) / v.marches), march - inf);
+  const arch = march - inf - cav;
+  // Positive = infantry that won't fit even with every march all infantry.
+  const infLeft = v.inf10 + v.inf9 - volume;
+  return { march, volume, troops, head: volume - troops, inf, cav, arch, infLeft };
+}
+
+const OPTIONS = {
+  marches: [6, 5, 4, 3, 2, 1],
+  pet: [0, 1500, 3000, 4500, 6000, 7500, 9000, 10500, 12000, 13500, 15000],
+  item: [0, 10, 20],
+  castle: [0, 2500, 3750],
+};
+const DEFAULTS = { marches: 6, pet: 10500, item: 0, castle: 0 };
+const LABEL = { item: n => n + "%" };
+
+const fmt = n => Math.round(n).toLocaleString("en-US");
+const num = id => Math.max(0, Number(document.getElementById(id).value) || 0);
+
+for (const [id, list] of Object.entries(OPTIONS)) {
+  const sel = document.getElementById(id);
+  for (const n of list) {
+    const o = new Option(LABEL[id] ? LABEL[id](n) : fmt(n), n);
+    if (n === DEFAULTS[id]) o.selected = true;
+    sel.add(o);
+  }
+}
+
+function update() {
+  const r = calc({
+    marches: num("marches"), size: num("size"), pet: num("pet"),
+    item: num("item"), castle: num("castle"),
+    inf10: num("inf10"), inf9: num("inf9"), cav10: num("cav10"), cav9: num("cav9"),
+  });
+  const out = { march2: r.march, volume: r.volume, troops: r.troops, head: r.head,
+                inf: r.inf, cav: r.cav, arch: r.arch,
+                inftotal: num("inf10") + num("inf9"), cavtotal: num("cav10") + num("cav9") };
+  for (const [k, n] of Object.entries(out)) {
+    const el = document.getElementById("o-" + k);
+    el.textContent = fmt(n);
+    el.classList.toggle("neg", n < 0);
+  }
+  for (const k of ["inf", "cav", "arch"])
+    document.getElementById("b-" + k).style.width = (r.march ? r[k] / r.march * 100 : 0) + "%";
+  const st = document.getElementById("inf-status");
+  const stuck = r.infLeft > 0;
+  st.className = "card status " + (stuck ? "bad" : "ok");
+  st.innerHTML = stuck
+    ? `Can't empty your infantry: ${fmt(r.infLeft)} left behind.` +
+      `<p class="small">Even with every march sent as all infantry.</p>`
+    : `All infantry can go out, with ${fmt(-r.infLeft)} room to spare.` +
+      `<p class="small">That spare room goes to cavalry, then archers.</p>`;
+}
+
+document.querySelectorAll("select, input").forEach(el => el.addEventListener("input", update));
+update();
+</script>
+</body>
+</html>
