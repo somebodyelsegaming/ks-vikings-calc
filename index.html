@@ -77,7 +77,7 @@
       <div class="stack">
         <div>
           <label for="size">Size of march</label>
-          <input id="size" type="number" min="0" step="1" value="189110">
+          <input id="size" type="number" min="0" step="1" inputmode="numeric" value="189110">
         </div>
         <div>
           <label for="marches">Number of marches</label>
@@ -107,11 +107,11 @@
   <div class="card">
     <h2>Troops</h2>
     <div class="grid three">
-      <div><label for="inf10">Infantry MAX</label><input id="inf10" type="number" min="0" step="1" value="1169162"></div>
-      <div><label for="inf9">Infantry (not yet promoted)</label><input id="inf9" type="number" min="0" step="1" value="27552"></div>
+      <div><label for="inf10">Infantry MAX</label><input id="inf10" type="number" min="0" step="1" inputmode="numeric" value="1169162"></div>
+      <div><label for="inf9">Infantry (not yet promoted)</label><input id="inf9" type="number" min="0" step="1" inputmode="numeric" value="27552"></div>
       <div><label>Infantry total</label><output id="o-inftotal" class="total"></output></div>
-      <div><label for="cav10">Cavalry MAX</label><input id="cav10" type="number" min="0" step="1" value="1131874"></div>
-      <div><label for="cav9">Cavalry (not yet promoted)</label><input id="cav9" type="number" min="0" step="1" value="26389"></div>
+      <div><label for="cav10">Cavalry MAX</label><input id="cav10" type="number" min="0" step="1" inputmode="numeric" value="1131874"></div>
+      <div><label for="cav9">Cavalry (not yet promoted)</label><input id="cav9" type="number" min="0" step="1" inputmode="numeric" value="26389"></div>
       <div><label>Cavalry total</label><output id="o-cavtotal" class="total"></output></div>    </div>
   </div>
 
@@ -165,7 +165,11 @@ const DEFAULTS = { marches: 6, pet: 10500, item: 0, castle: 0 };
 const LABEL = { item: n => n + "%" };
 
 const fmt = n => Math.round(n).toLocaleString("en-US");
-const num = id => Math.max(0, Number(document.getElementById(id).value) || 0);
+// Typed boxes: whole numbers, 0 or more. Anything else (blank, negative, text) becomes 0.
+const whole = v => { const n = Math.floor(Number(v)); return Number.isFinite(n) && n > 0 ? n : 0; };
+// Drop-downs: only values from OPTIONS; anything else falls back to the default.
+const pick = id => { const n = Number(document.getElementById(id).value); return OPTIONS[id].includes(n) ? n : DEFAULTS[id]; };
+const num = id => OPTIONS[id] ? pick(id) : whole(document.getElementById(id).value);
 
 for (const [id, list] of Object.entries(OPTIONS)) {
   const sel = document.getElementById(id);
@@ -202,7 +206,13 @@ function update() {
       `<p class="small">That spare room goes to cavalry, then archers.</p>`;
 }
 
-document.querySelectorAll("select, input").forEach(el => el.addEventListener("input", update));
+// Recalculate when you leave a box (or press Enter), not on every keystroke.
+// The box is then rewritten to the cleaned number, so what you see is what was used.
+document.querySelectorAll("input").forEach(el => el.addEventListener("change", () => {
+  el.value = whole(el.value);
+  update();
+}));
+document.querySelectorAll("select").forEach(el => el.addEventListener("change", update));
 update();
 </script>
 </body>
